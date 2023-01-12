@@ -6,10 +6,7 @@ The code uses the [Selenium](https://selenium-python.readthedocs.io/) library an
 In the future the data is then parsed and returned as a Pandas DataFrame.
 
 ## Usage
-
-```python
-python3 pyfingrid.py
-```
+The code is not yet documented and the API is not yet complete. The code is not yet tested and the API is not yet stable.
 
 ```python
 cookies = get_cookies()

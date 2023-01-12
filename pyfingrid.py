@@ -65,8 +65,3 @@ def logout(s : requests.Session):
     """
     r = s.get('https://oma.datahub.fi/_api/logout')
     return r.ok
-cookies = get_cookies()
-session = get_session(cookies)
-token = get_token(cookies)
-print(get_metering_points(session,token))
-ok = logout(session)
