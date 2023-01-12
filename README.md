@@ -10,3 +10,11 @@ In the future the data is then parsed and returned as a Pandas DataFrame.
 ```python
 python3 pyfingrid.py
 ```
+
+```python
+cookies = get_cookies()
+session = get_session(cookies)
+token = get_token(cookies)
+print(get_metering_points(session,token))
+ok = logout(session)
+```
