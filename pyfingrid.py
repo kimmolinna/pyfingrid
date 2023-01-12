@@ -27,6 +27,7 @@ def get_token():
     if user==None:
         raise Exception('Could not get token')
     else:
+        time.sleep(1)
         return json.loads(urllib.parse.unquote(user))['token']
 def login(t : str):
     """Login to the Fingrid datahub API with a token
