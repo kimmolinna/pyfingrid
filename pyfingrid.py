@@ -46,7 +46,7 @@ def get_metering_points(s : requests.Session):
     Arguments:
         s {requests.Session} -- Session object
     """
-    r = s.get('https://oma.datahub.fi/_api/GetAgreementData?agreementStatus=TRM')
+    r = s.get('https://oma.datahub.fi/_api/GetAgreementData?agreementStatus=CFD')
     return r.content
 def logout(s : requests.Session):
     """Logout from the API
