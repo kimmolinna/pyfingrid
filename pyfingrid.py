@@ -5,7 +5,7 @@ import json,requests,time
 import urllib.parse
 
 def get_cookies():
-    """Get a token from the Fingrid datahub API
+    """Get cookies from the Fingrid datahub API
 
     Raises:
         Exception: If login is not successful in 60 seconds
@@ -28,7 +28,7 @@ def get_cookies():
     else:
         return cookies
 def get_session(c: dict):
-    """Login to the Fingrid datahub API with a token
+    """Login to the Fingrid datahub API with cookies and return a session object
 
     Arguments:
         t -- The token
@@ -41,7 +41,7 @@ def get_session(c: dict):
     s.headers.update({'Authorization': 'Bearer ' + json.loads(urllib.parse.unquote(c['cap-user']))['token']})
     return s
 def get_metering_points(s : requests.Session):
-    """Get metering points from the API
+    """Get metering points from the Fingrid Datahub API
 
     Arguments:
         s {requests.Session} -- Session object
