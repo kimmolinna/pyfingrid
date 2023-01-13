@@ -11,7 +11,7 @@ def get_cookies():
         Exception: If login is not successful in 60 seconds
 
     Returns:
-        str -- The token
+        dict -- Cookies
     """
     driver = webdriver.Chrome(service = ChromeService(ChromeDriverManager().install()))
     driver.get('https://oma.datahub.fi/')
@@ -27,16 +27,6 @@ def get_cookies():
         raise Exception('Could not get cookies')
     else:
         return cookies
-def get_token(c : dict):
-    """Get a token from the Fingrid datahub API cookies
-    
-    Arguments:
-        c {dict} -- Cookies
-    
-    Returns:
-        str -- The token
-    """
-    return json.loads(urllib.parse.unquote(c['cap-user']))['token']
 def get_session(c: dict):
     """Login to the Fingrid datahub API with a token
 
@@ -48,14 +38,15 @@ def get_session(c: dict):
     """
     s = requests.Session()
     s.cookies.update(c)
+    s.headers.update({'Authorization': 'Bearer ' + json.loads(urllib.parse.unquote(c['cap-user']))['token']})
     return s
-def get_metering_points(s : requests.Session, t : str):
+def get_metering_points(s : requests.Session):
     """Get metering points from the API
 
     Arguments:
         s {requests.Session} -- Session object
     """
-    r = s.get('https://oma.datahub.fi/_api/GetAgreementData?agreementStatus=TRM',headers={'Authorization': 'Bearer '+t})
+    r = s.get('https://oma.datahub.fi/_api/GetAgreementData?agreementStatus=TRM')
     return r.content
 def logout(s : requests.Session):
     """Logout from the API
