@@ -1,8 +1,10 @@
+from datetime import date, datetime, timedelta
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium import webdriver
 import json,requests,time
 import urllib.parse
+import pytz
 
 def get_cookies():
     """Get cookies from the Fingrid datahub API
@@ -27,6 +29,7 @@ def get_cookies():
         raise Exception('Could not get cookies')
     else:
         return cookies
+
 def get_session(c: dict):
     """Login to the Fingrid datahub API with cookies and return a session object
 
@@ -40,6 +43,7 @@ def get_session(c: dict):
     s.cookies.update(c)
     s.headers.update({'Authorization': 'Bearer ' + json.loads(urllib.parse.unquote(c['cap-user']))['token']})
     return s
+
 def get_metering_points(s : requests.Session):
     """Get metering points from the Fingrid Datahub API
 
@@ -48,6 +52,24 @@ def get_metering_points(s : requests.Session):
     """
     r = s.get('https://oma.datahub.fi/_api/GetAgreementData?agreementStatus=CFD')
     return r.content
+
+def get_consumption_data(metering_point: str, period_start: str, period_end: str, s : requests.Session):
+    """Get consumption data from the API
+
+    Arguments:
+        metering_point {str} -- Metering point ID
+        period_start {str} -- Date and time in UTC, in ISO8601 format
+        periond_end {str} -- Date and time in UTC, in ISO8601 format
+        s {requests.Session} -- Session object
+    """
+    r = s.get('https://oma.datahub.fi/_api/GetConsumptionData?meteringPointEAN=' + metering_point + '&periodStartTS=' + period_start + '&periodEndTS=' + period_end + '&unitType=kWh&productType=8716867000030&settlementRelevant=false&readingType=BN01')
+    if r.status_code == 401:
+        raise Exception("HTTP 401: Access denied, session is not valid.")
+    elif r.status_code != 200:
+        raise Exception("Unexpected response from Datahub API: " + r.status_code)
+
+    return r.content
+
 def logout(s : requests.Session):
     """Logout from the API
     
@@ -56,3 +78,33 @@ def logout(s : requests.Session):
     """
     r = s.get('https://oma.datahub.fi/_api/logout')
     return r.ok
+
+def prepare_start_time(delta: int):
+    """Prepare the start time for the consumption query.
+
+    Arguments:
+        delta {int} -- Number of days in history.
+
+    Returns:
+        str -- Date and time in UTC, in the ISO8601 format the API expects.
+    """
+    # Prepare datetime object on local timezone, with time part at 00:00
+    d = datetime.combine((date.today() - timedelta(days=delta)), datetime.min.time())
+    # Convert from local timezone to UTC and format to expected ISO8601 format.
+    utc = d.astimezone(pytz.utc).isoformat('T', 'milliseconds').replace('+00:00', 'Z')
+    return utc
+
+def prepare_end_time(delta: int):
+    """Prepare the end time for the consumption query.
+
+    Arguments:
+        delta {int} -- Number of days in history.
+
+    Returns:
+        str -- Date and time in UTC, in the ISO8601 format the API expects.
+    """
+    # Prepare datetime object on local timezone, with time part at 23:59
+    d = datetime.combine((date.today() - timedelta(days=delta)), datetime.max.time())
+    # Convert from local timezone to UTC and format to expected ISO8601 format.
+    utc = d.astimezone(pytz.utc).isoformat('T', 'milliseconds').replace('+00:00', 'Z')
+    return utc
