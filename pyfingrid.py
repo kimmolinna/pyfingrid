@@ -44,6 +44,25 @@ def get_session(c: dict):
     s.headers.update({'Authorization': 'Bearer ' + json.loads(urllib.parse.unquote(c['cap-user']))['token']})
     return s
 
+def get_cookies_from_file(filename: str):
+    """Reads cookies from given file.
+
+    Arguments:
+        filename -- full path to the file containinig the session variables.
+
+    Returns:
+        dict -- Variables of the Datahub cookie.
+    """
+    try:
+        f = open(filename)
+        cookies = json.loads(f.readline())
+        f.close()
+    except:
+        raise Exception("Unable to open session file or invalid file content!")
+
+    return cookies
+
+
 def get_metering_points(s : requests.Session):
     """Get metering points from the Fingrid Datahub API
 
@@ -63,12 +82,25 @@ def get_consumption_data(metering_point: str, period_start: str, period_end: str
         s {requests.Session} -- Session object
     """
     r = s.get('https://oma.datahub.fi/_api/GetConsumptionData?meteringPointEAN=' + metering_point + '&periodStartTS=' + period_start + '&periodEndTS=' + period_end + '&unitType=kWh&productType=8716867000030&settlementRelevant=false&readingType=BN01')
+
     if r.status_code == 401:
         raise Exception("HTTP 401: Access denied, session is not valid.")
     elif r.status_code != 200:
         raise Exception("Unexpected response from Datahub API: " + r.status_code)
 
-    return r.content
+    points = []
+
+    try:
+        j = json.loads(r.content)
+        items = j['TimeSeries'][0]['Observations']
+    except:
+        return points
+
+    for item in items:
+        point = { "timestamp": item['PeriodStartTime'], "consumption": float(item['Quantity'])}
+        points.append(point)
+
+    return points
 
 def logout(s : requests.Session):
     """Logout from the API

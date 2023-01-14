@@ -1,7 +1,7 @@
 import constant
 import pyfingrid as fg
-import json
 import logging
+import sys
 
 logging.basicConfig(
     level=logging.INFO,
@@ -9,49 +9,22 @@ logging.basicConfig(
     filename=constant.LOGFILE,
     filemode='a')
 
-def get_cookies_from_file():
-    """Reads cookies from session.txt
-    
-    Returns:
-        dict -- Variables of the Datahub cookie.
-    """
-    try:
-        f = open(constant.SESSIONFILE)
-        cookies = json.loads(f.readline())
-        f.close()
-    except:
-        logging.exception("Unable to open session file or invalid file content!")
-        raise
+logging.info('Starting to fetch power consumption data from Fingrid Datahub...')
 
-    return cookies
+metering_point = constant.ETERING_POINT
+period_start = fg.prepare_start_time(1)
+period_end = fg.prepare_end_time(1)
 
-if __name__ == '__main__':
-    logging.info('Starting to fetch power consumption data from Fingrid Datahub...')
-
-    cookies = get_cookies_from_file()
+try:
+    cookies = fg.get_cookies_from_file(constant.SESSIONFILE)
     session = fg.get_session(cookies)
+    points = fg.get_consumption_data(metering_point, period_start, period_end, session)
+except:
+    logging.exception('Unable to read consumption from Datahub!')
+    sys.exit()
 
-    metering_point = constant.METERING_POINT
-    period_start = fg.prepare_start_time(1)
-    period_end = fg.prepare_end_time(1)
+for point in points:
+    # Save the values where you want, this example simply prints the consumption.
+    print(point['timestamp'] + ": " + str(point['consumption']) + " kWh")
 
-    try:
-        response = fg.get_consumption_data(metering_point, period_start, period_end, session)
-    except:
-        logging.exception('Unexpected response from Datahub API!')
-        raise
-
-    try:
-        consumption = json.loads(response)
-        items = consumption['TimeSeries'][0]['Observations']
-    except:
-        logging.info('No consumption data available for the selected time range.')
-        raise
-
-    for item in items:
-        timestamp = item['PeriodStartTime']
-        value = float(item['Quantity'])
-        # Save the values where you want, this example simply prints the consumption.
-        print(timestamp + ": " + str(value) + " kWh")
-        
-    logging.info('Consumption successfully fetched from Datahub!')
+logging.info(str(len(points)) + ' consumption points feteched from Datahub.')
