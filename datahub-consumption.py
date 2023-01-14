@@ -11,7 +11,7 @@ logging.basicConfig(
 
 logging.info('Starting to fetch power consumption data from Fingrid Datahub...')
 
-metering_point = constant.ETERING_POINT
+metering_point = constant.METERING_POINT
 period_start = fg.prepare_start_time(1)
 period_end = fg.prepare_end_time(1)
 
