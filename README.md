@@ -1,17 +1,20 @@
 ﻿# pyfingrid
 Fingrid Datahub API for Python
 
-At the moment this is a proof of concept. The API is not yet complete and the code is not yet documented.
-The code uses the [Selenium](https://selenium-python.readthedocs.io/) library and the [requests](https://pypi.org/project/requests/) to scrape the data from the [Fingrid Datahub](https://data.fingrid.fi/). Selenium is used until the authorization and after that requests is used with authorization Token.
-In the future the data is then parsed and returned as a Pandas DataFrame.
+The code uses the [Selenium](https://selenium-python.readthedocs.io/) library and the [requests](https://pypi.org/project/requests/) to scrape the data from the [Fingrid Datahub](https://data.fingrid.fi/). Selenium is used to get cookies for the session.
 
 ## Usage
-The code is not yet documented and the API is not yet complete. The code is not yet tested and the API is not yet stable.
 
 ```python
-cookies = get_cookies()
+cookies = get_cookies()                             # get_cookies() gets cookies with Selenium
+or 
+cookies = get_cookies("cookies.json")               # get cookies from a file
 session = get_session(cookies)
-token = get_token(cookies)
-print(get_metering_points(session,token))
+meteringPoints = get_metering_points(session)
+data = get_consumption_data(session, meteringPoint, start, end)
 ok = logout(session)
 ```
+
+## Example
+
+[datahub.py](./datahub.py) contains an example of how to use the functions.
