@@ -40,19 +40,67 @@ def get_cookies(file : str = "")->dict:
         except:
             cookies = get_cookies() 
         return cookies  
-def get_session(c: dict)->requests.Session:
-    """Login to the Fingrid datahub API with cookies and return a session object
-
-    Arguments:
-        t -- The token
+def get_session()->requests.Session:
+    """Get a session object
 
     Returns:
         requests.Session -- Session object
     """
-    s = requests.Session()
+    return requests.Session()
+def get_response(s: requests.Session, url: str)->requests.Response:
+    """Get a response from the Fingrid Datahub API
+
+    Arguments:
+        s {requests.Session} -- Session object
+        url {str} -- URL
+
+    Returns:
+        requests.Response -- Response object
+    """
+    r = s.get(url)
+    if not check_authorization(r):
+        cookies = get_cookies()
+        cookies_to_session(s,cookies)
+        r = s.get(url)
+    return r
+def cookies_to_session (s: requests.Session,c: dict):
+    """Update the session object
+
+    Arguments:
+        s {requests.Session} -- Session object
+
+    Returns:
+        requests.Session -- Session object
+    """
     s.cookies.update(c)
-    s.headers.update({'Authorization': 'Bearer ' + json.loads(urllib.parse.unquote(c['cap-user']))['token']})
-    return s
+    try:
+        s.headers.update({'Authorization': 'Bearer ' + json.loads(urllib.parse.unquote(c['cap-user']))['token']})
+    except:
+        cookies = get_cookies()
+        cookies_to_session(s,cookies)
+def check_authorization(r: requests.Response)->bool:
+    """Check if the session object is authorized
+
+    Arguments:
+        r {requests.Response} -- Response object
+
+    Returns:
+        bool -- True if authorized, False otherwise
+    """
+    if r.status_code == 401 and r.reason == 'Unauthorized':
+        return False
+    else:
+        return True
+def get_customer_data(s: requests.Session)->dict:
+    """Get customer data from the Fingrid Datahub API
+
+    Arguments:
+        s {requests.Session} -- Session object
+
+    Returns:
+        dict -- Customer data
+    """
+    return get_response(s,'https://oma.datahub.fi/_api/GetCustomerData').json()
 def get_metering_points(s : requests.Session)->list:
     """Get metering points from the Fingrid Datahub API
 
@@ -62,7 +110,7 @@ def get_metering_points(s : requests.Session)->list:
     Returns:
         list -- List of lists of (meteringPointEAN, address)
     """
-    r = s.get('https://oma.datahub.fi/_api/GetAgreementData?agreementStatus=CFD').json()
+    r = get_response(s,'https://oma.datahub.fi/_api/GetAgreementData?agreementStatus=CFD').json()
     return [(a['accountingPoint']['meteringPointEAN'],
         " ".join([a['accountingPoint']['meteringPointAddresses'][0][key] for key in ['streetName',
         'buildingNumber','stairwellIdentification','apartment']])) for a in r if '11' == a['agreementType']]
@@ -78,7 +126,7 @@ def get_consumption_data(s : requests.Session, meteringPointEAN : str, start : s
     Returns:
         list -- List of lists of (timestamp (ISO 8601), consumption (kWh))       
     """
-    r = s.get('https://oma.datahub.fi/_api/GetConsumptionData?meteringPointEAN=' + meteringPointEAN + \
+    r = get_response(s,'https://oma.datahub.fi/_api/GetConsumptionData?meteringPointEAN=' + meteringPointEAN + \
     '&periodStartTS=' + start + ':00.000Z&periodEndTS=' + end + \
     ':00.000Z&unitType=kWh&productType=8716867000030&settlementRelevant=false&readingType=BN01').json()
     return [[(o['PeriodStartTime'],float(o['Quantity'])) for o in ts['Observations'] if o['Quality']=='OK'] for ts in r['TimeSeries']][0]

@@ -9,7 +9,9 @@ The code uses the [Selenium](https://selenium-python.readthedocs.io/) library an
 cookies = get_cookies()                             # get_cookies() gets cookies with Selenium
 or 
 cookies = get_cookies("cookies.json")               # get cookies from a file
-session = get_session(cookies)
+session = get_session()
+cookies_to_session(session, cookies)
+customerData = get_customer_data(session)
 meteringPoints = get_metering_points(session)
 data = get_consumption_data(session, meteringPoint, start, end)
 ok = logout(session)

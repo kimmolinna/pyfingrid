@@ -9,7 +9,9 @@ if len(sys.argv) < 2:
 else:
     year = int(sys.argv[1])
 cookies = fg.get_cookies("cookies.json")
-session = fg.get_session(cookies)
+session = fg.get_session()
+fg.cookies_to_session(session, cookies)
+customerData = fg.get_customer_data(session)
 meteringPoints = fg.get_metering_points(session)
 data = fg.get_consumption_data(session, meteringPoints[3][0], str(year-1)+'-12-31T22:00', str(year)+'-12-31T22:00')
 df = pd.DataFrame(data,columns=['timestamp','consumption'])
