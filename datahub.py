@@ -18,7 +18,12 @@ meteringPoints = fg.get_metering_points(session)
 data = fg.get_consumption_data(session, meteringPoints[3][0], str(year-1)+'-12-31T22:00', str(year)+'-12-31T22:00')
 df = pd.DataFrame(data,columns=['timestamp','consumption'])
 df['timestamp'] = pd.to_datetime(df['timestamp'])
-b3_session = boto3.Session(profile_name="cloudflare")
-wr.config.s3_endpoint_url = 'https://' + str(keyring.get_password('r2','account_id')) + '.r2.cloudflarestorage.com'
-wr.s3.to_parquet(df, "s3://linna/fingrid/home_"+ str(year) +".parquet",boto3_session=b3_session)
+# Cloudflare
+#b3_session = boto3.Session(profile_name="cloudflare")
+#wr.config.s3_endpoint_url = 'https://' + str(keyring.get_password('r2','account_id')) + '.r2.cloudflarestorage.com'
+#wr.s3.to_parquet(df, "s3://linna/fingrid/home_"+ str(year) +".parquet",boto3_session=b3_session)
+
+# AWS
+wr.s3.to_parquet(df, "s3://linna/fingrid/home_"+ str(year) +".parquet")
+
 fg.logout(session)
