@@ -1,7 +1,7 @@
 import pyfingrid as fg
 import pandas as pd
 import awswrangler as wr
-import boto3
+# import boto3
 import keyring
 import sys
 import datetime as dt
