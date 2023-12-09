@@ -3,6 +3,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium import webdriver
 import json,requests,time
 import urllib.parse
+import itertools
 
 def get_cookies(file : str = "")->dict:
     """Get cookies for the Fingrid datahub API from the file or with Selenium and ChromeDriver
@@ -128,8 +129,8 @@ def get_consumption_data(s : requests.Session, meteringPointEAN : str, start : s
     """
     r = get_response(s,'https://oma.datahub.fi/_api/GetConsumptionData?meteringPointEAN=' + meteringPointEAN + \
     '&periodStartTS=' + start + ':00.000Z&periodEndTS=' + end + \
-    ':00.000Z&unitType=kWh&productType=8716867000030&settlementRelevant=false&readingType=BN01').json()
-    return [[(o['PeriodStartTime'],float(o['Quantity'])) for o in ts['Observations'] if o['Quality']=='OK'] for ts in r['TimeSeries']][0]
+    ':00.000Z&unitType=kWh%resolutionDuration=PT1H&productType=8716867000030&settlementRelevant=false&readingType=BN01').json()
+    return list(itertools.chain.from_iterable([[(o['PeriodStartTime'],float(o['Quantity'])) for o in ts['Observations'] if o['Quality']=='OK'] for ts in r['TimeSeries']]))
 def logout(s : requests.Session)->bool:
     """Logout from the API
     
