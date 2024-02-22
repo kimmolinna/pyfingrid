@@ -1,7 +1,7 @@
 import pyfingrid as fg
 import pandas as pd
 import awswrangler as wr
-import boto3
+# import boto3
 import keyring
 import sys
 import datetime as dt
@@ -20,11 +20,11 @@ data = fg.get_consumption_data(session, meteringPoints[mp][0], str(year-1)+'-12-
 df = pd.DataFrame(data,columns=['timestamp','consumption'])
 df['timestamp'] = pd.to_datetime(df['timestamp'])
 # Cloudflare
-b3_session = boto3.Session(profile_name="cloudflare")
-wr.config.s3_endpoint_url = 'https://' + str(keyring.get_password('r2','account_id')) + '.r2.cloudflarestorage.com'
-wr.s3.to_parquet(df, "s3://linna/fingrid/home_"+ str(year) +".parquet",boto3_session=b3_session)
+# b3_session = boto3.Session(profile_name="cloudflare")
+# wr.config.s3_endpoint_url = 'https://' + str(keyring.get_password('r2','account_id')) + '.r2.cloudflarestorage.com'
+# wr.s3.to_parquet(df, "s3://linna/fingrid/home_"+ str(year) +".parquet",boto3_session=b3_session)
 
 # AWS
-# wr.s3.to_parquet(df, "s3://linna/fingrid/home_"+ str(year) +".parquet")
+wr.s3.to_parquet(df, "s3://linna/fingrid/home_"+ str(year) +".parquet")
 
 fg.logout(session)
