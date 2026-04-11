@@ -1,0 +1,17 @@
+[project]
+name = "pyfingrid"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "requests>=2.33.1",
+    "selenium>=4.43.0",
+    "webdriver-manager>=4.0.2",
+]
+
+[project.optional-dependencies]
+datahub = [
+    "awswrangler>=3.16.0",
+    "keyring>=25.7.0",
+    "pandas>=3.0.2",
+]

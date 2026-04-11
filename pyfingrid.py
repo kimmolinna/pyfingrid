@@ -48,21 +48,22 @@ def get_session()->requests.Session:
         requests.Session -- Session object
     """
     return requests.Session()
-def get_response(s: requests.Session, url: str)->requests.Response:
+def get_response(s: requests.Session, url: str, body: dict = {})->requests.Response:
     """Get a response from the Fingrid Datahub API
 
     Arguments:
         s {requests.Session} -- Session object
         url {str} -- URL
+        body {dict} -- JSON request body (default: {})
 
     Returns:
         requests.Response -- Response object
     """
-    r = s.get(url)
+    r = s.post(url, json=body)
     if not check_authorization(r):
         cookies = get_cookies()
         cookies_to_session(s,cookies)
-        r = s.get(url)
+        r = s.post(url, json=body)
     return r
 def cookies_to_session (s: requests.Session,c: dict):
     """Update the session object
@@ -75,7 +76,14 @@ def cookies_to_session (s: requests.Session,c: dict):
     """
     s.cookies.update(c)
     try:
-        s.headers.update({'Authorization': 'Bearer ' + json.loads(urllib.parse.unquote(c['cap-user']))['token']})
+        s.headers.update({
+            'Authorization': 'Bearer ' + json.loads(urllib.parse.unquote(c['cap-user']))['token'],
+            'X-XSRF-TOKEN': urllib.parse.unquote(c['XSRF-TOKEN']),
+            'Origin': 'https://oma.datahub.fi',
+            'Referer': 'https://oma.datahub.fi/',
+            'Accept': 'application/json, text/plain, */*',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36',
+        })
     except:
         cookies = get_cookies()
         cookies_to_session(s,cookies)
@@ -101,7 +109,7 @@ def get_customer_data(s: requests.Session)->dict:
     Returns:
         dict -- Customer data
     """
-    return get_response(s,'https://oma.datahub.fi/_api/GetCustomerData').json()
+    return get_response(s,'https://oma.datahub.fi/_api/GetCustomerData', {}).json()
 def get_metering_points(s : requests.Session)->list:
     """Get metering points from the Fingrid Datahub API
 
@@ -111,7 +119,7 @@ def get_metering_points(s : requests.Session)->list:
     Returns:
         list -- List of lists of (meteringPointEAN, address)
     """
-    r = get_response(s,'https://oma.datahub.fi/_api/GetAgreementData?agreementStatus=CFD').json()
+    r = get_response(s,'https://oma.datahub.fi/_api/GetAgreementData', {'AgreementStatus': 'CFD'}).json()
     return [(a['accountingPoint']['meteringPointEAN'],
         " ".join([a['accountingPoint']['meteringPointAddresses'][0][key] for key in ['streetName',
         'buildingNumber','stairwellIdentification','apartment']])) for a in r if '11' == a['agreementType']]
@@ -127,9 +135,16 @@ def get_consumption_data(s : requests.Session, meteringPointEAN : str, start : s
     Returns:
         list -- List of lists of (timestamp (ISO 8601), consumption (kWh))       
     """
-    r = get_response(s,'https://oma.datahub.fi/_api/GetConsumptionData?meteringPointEAN=' + meteringPointEAN + \
-    '&periodStartTS=' + start + ':00.000Z&periodEndTS=' + end + \
-    ':00.000Z&unitType=kWh%resolutionDuration=PT1H&productType=8716867000030&settlementRelevant=false&readingType=BN01').json()
+    r = get_response(s,'https://oma.datahub.fi/_api/GetConsumptionData', {
+        'MeteringPointEAN': meteringPointEAN,
+        'PeriodStartTS': start + ':00.000Z',
+        'PeriodEndTS': end + ':00.000Z',
+        'UnitType': 'kWh',
+        'ResolutionDuration': 'PT1H',
+        'ProductType': '8716867000030',
+        'SettlementRelevant': False,
+        'ReadingType': 'BN01'
+    }).json()
     return list(itertools.chain.from_iterable([[(o['PeriodStartTime'],float(o['Quantity'])) for o in ts['Observations'] if o['Quality']=='OK'] for ts in r['TimeSeries']]))
 def logout(s : requests.Session)->bool:
     """Logout from the API
@@ -140,4 +155,4 @@ def logout(s : requests.Session)->bool:
     Returns:
         bool -- True if logout was successful
     """
-    return s.get('https://oma.datahub.fi/_api/logout').ok
+    return s.post('https://oma.datahub.fi/_api/logout').ok
